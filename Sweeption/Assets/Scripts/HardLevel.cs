@@ -15,16 +15,17 @@ public class HardLevel : MonoBehaviour
         gameBoss.globalDifficulty += 0.1f;
         float difficulty = gameBoss.globalDifficulty;
         float levelTimeLimit = Random.Range(60, 120);
-        float multLimit = levelTimeLimit / difficulty;
+        float multLimit = levelTimeLimit / (difficulty * difficulty);
         int timeLimit = Mathf.CeilToInt(multLimit);
 
         float randWidth = Random.Range(8, 16);
         float floatWidth = randWidth * difficulty;
         int width = Mathf.CeilToInt(floatWidth);
+        width = Mathf.Clamp(width, 0, 40);
 
         int height = width;
 
-        float randMine = Random.Range(12, 24);
+        float randMine = Random.Range(24, 32);
         float floatMine = randMine * difficulty;
         int mineCount = Mathf.CeilToInt(floatMine);
 
@@ -37,6 +38,8 @@ public class HardLevel : MonoBehaviour
         int money = Mathf.FloorToInt(moneyFloat);
         gameBoss.playerMoney += money;
         SceneManager.LoadScene("Minesweeper");
+        
+        
     }
 
     private void Start()

@@ -1,49 +1,27 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class EnemyHealth : MonoBehaviour
 {
-    public Slider healthSlider;
-    [SerializeField] GameLogic gameLogic;
-    public int healthbarHealthValue;
-    private AudioSource _source;
-    private int x;
+    private GameObject gameBossObject;
+    private GameBoss gameBoss;
+    [SerializeField] private GameLogic gameLogic;
 
-    [SerializeField] private AudioClip _loseHealth;
-    
-    
-    public void SetBomb(int health)
-    {
-        healthSlider.value = health;
-       healthbarHealthValue = health;
-       gameLogic.mineCount = healthbarHealthValue;
-       audioCheck();
-       
-    }
+    [SerializeField] private TextMeshProUGUI mineMessage;
 
-    private void audioCheck()
-    {
-        if (x > healthbarHealthValue)
-        {
-            hit();
-        }
-    }
+    private int flagCount;
 
-    private void hit()
-    {
-        _source.clip = _loseHealth;
-        _source.Play();
-        x = healthbarHealthValue;
-    }
     public void Start()
     {
+        gameBossObject = GameObject.Find("GameBoss");
+        gameBoss = gameBossObject.GetComponent<GameBoss>();
 
-        healthbarHealthValue = gameLogic.currentMineCount;
-        healthSlider.maxValue = gameLogic.mineCount;
-        healthSlider.value = healthbarHealthValue;
-        SetBomb(healthbarHealthValue);
-        
-        x = healthbarHealthValue;
-        _source = GetComponent<AudioSource>();
+    }
+
+    private void Update()
+    {
+        flagCount = gameLogic.flagCount;
+        mineMessage.text = string.Format("{0}", flagCount);
     }
 }

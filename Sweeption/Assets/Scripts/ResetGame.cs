@@ -11,6 +11,7 @@ public class ResetGame : MonoBehaviour
     {
         gameBossObject = GameObject.Find("GameBoss");
         gameBoss = gameBossObject.GetComponent<GameBoss>();
+        
     }
 
     // Update is called once per frame
@@ -22,8 +23,9 @@ public class ResetGame : MonoBehaviour
             gameBoss.playerMoney = 0;
             gameBoss.playerMaxHealth = 10;
             gameBoss.globalDifficulty = 1;
+            gameBoss.levelsBeat = 0;
 
-            SceneManager.LoadScene("LevelSelect");
+            SceneManager.LoadScene("TitleScreen");
         }
     }
 }

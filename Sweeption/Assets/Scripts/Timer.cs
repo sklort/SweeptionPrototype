@@ -20,7 +20,8 @@ public class Timer : MonoBehaviour
     [SerializeField] private AudioSource _source;
     [SerializeField] private AudioClip _tickOn;
     private bool tickSound = false;
-    private bool tickOn;
+    public bool tickOn;
+    private Color firstColor;
 
 
     void Start()
@@ -30,26 +31,30 @@ public class Timer : MonoBehaviour
         _source = GetComponent<AudioSource>();
         timeLimit = gameBoss.timeLimit;
         playerHealth = gameBoss.playerHealthMain;
+        elapsedTime = timeLimit;
     }
 
     // Update is called once per frame
     void Update()
     {
-        elapsedTime += Time.deltaTime;
-        int minutes = Mathf.FloorToInt(elapsedTime / 60);
-        int seconds = Mathf.FloorToInt(elapsedTime % 60);
-        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
-
-        if (elapsedTime >= timeLimit)
+        if (elapsedTime > 0.1)
         {
-            if (tickOn == false)
-            {
-                coRoutines.GetComponent<NewMonoBehaviourScript>().enabled = true;
-                tickOn = true;
-            }
+            tickSound = false;
+            tickOn = false;
+            elapsedTime -= Time.deltaTime;
+            int minutes = Mathf.FloorToInt(elapsedTime / 60);
+            int seconds = Mathf.FloorToInt(elapsedTime % 60);
+            timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            camera.backgroundColor = new Color(.71f, .586f, .565f);;
+            coRoutines.GetComponent<NewMonoBehaviourScript>().enabled = true;
+        }
+
+        if (elapsedTime <= 0.1)
+        {
+            tickOn = true;
             camera.backgroundColor = Color.red;
 
-            if (tickSound == false)
+            if (tickSound == false)  
             {
                 _source.clip = _tickOn;
                 _source.Play();

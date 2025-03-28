@@ -23,6 +23,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/LoseScreen.unity
     guid: a5f3f1a930739417fa69c97a4bf022a3
+  - enabled: 1
+    path: Assets/Scenes/Tutorial.unity
+    guid: a55558663f1e24977b6a72e777410102
+  - enabled: 1
+    path: Assets/Scenes/HowToShop.unity
+    guid: 9c21f683b4dc843e7b2f97e6da44c582
+  - enabled: 1
+    path: Assets/Scenes/HowToSweep.unity
+    guid: 14e1750ee858046fbaa8557587608d03
+  - enabled: 1
+    path: Assets/Scenes/HowToPlay.unity
+    guid: 9307ac5fbf55a4dbcb55249b313c3526
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

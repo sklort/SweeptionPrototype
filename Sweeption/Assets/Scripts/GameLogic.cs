@@ -29,6 +29,8 @@ public class GameLogic : MonoBehaviour
    public int currentMineCount;
    private bool gameOver;
    private bool firstClick;
+   private int gridMineCount = 0;
+   public int flagCount;
 
    private Board board;
    private Cell[,] state;
@@ -39,7 +41,12 @@ public class GameLogic : MonoBehaviour
 
    private void OnValidate()
    {
-      mineCount = Mathf.Clamp(mineCount, 0, width * height);
+      width = gameBoss.width;
+      height = gameBoss.height;
+      float maxMineFloat = (width * height) * 0.3f;
+      int maxMine = Mathf.FloorToInt(maxMineFloat);
+      Debug.Log(maxMine);
+      mineCount = Mathf.Clamp(mineCount, 0, maxMine);
    }
 
    private void Awake()
@@ -56,21 +63,24 @@ public class GameLogic : MonoBehaviour
       _source.clip = _start;
       _source.Play();
       currentMineCount = gameBoss.mineCount;
+      flagCount = gameBoss.mineCount;
       playerHealth = 1;
       NewGame();
    }
 
    private void NewGame()
    {
+      gridMineCount = 0;
       width = gameBoss.width;
       height = gameBoss.height;
+      firstClick = false;
       mineCount = gameBoss.mineCount;
       state = new Cell[width, height];
       gameOver = false;
 
       GenerateCells();
-      GenerateMines();
-      GenerateNumbers();
+      // GenerateMines();
+      // GenerateNumbers();
       
       Camera.main.transform.position = new Vector3(width / 2f, height / 2f, -10f);
       float cameraSize = ((height/2.3f) + (1 * gameBoss.globalDifficulty));
@@ -94,10 +104,64 @@ public class GameLogic : MonoBehaviour
 
    private void GenerateMines()
    {
+      Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+      Vector3Int cellPosition = board.tilemap.WorldToCell(worldPosition);
+      Cell mouseCell = GetCell(cellPosition.x, cellPosition.y);
+      int firstX = cellPosition.x;
+      int firstY = cellPosition.y;
       for (int i = 0; i < mineCount; i++)
       {
          int x = Random.Range(0, width);
          int y = Random.Range(0, height);
+         // make sure to not spawn on/near mine
+          if (x == firstX && y == firstY)
+          {
+             i -= 1;
+             continue;
+          }
+          if (x == (firstX - 1) && y == firstY)
+          {
+             i -= 1;
+             continue;
+          }
+         
+          if (x == (firstX + 1) && y == firstY)
+          {
+             i -= 1;
+             continue;
+          }
+         
+          if (x == firstX && y == (firstY - 1))
+          {
+             i -= 1;
+             continue;
+          }
+          if (x == firstX && y == (firstY + 1))
+          {
+             i -= 1;
+             continue;
+          }
+          if (x == (firstX - 1) && y == (firstY - 1))
+          {
+             i -= 1;
+             continue;
+          }
+          if (x == (firstX + 1) && y == (firstY - 1))
+          {
+             i -= 1;
+             continue;
+          }
+          if (x == (firstX - 1) && y == (firstY + 1))
+          {
+             i -= 1;
+             continue;
+          }
+          if (x == (firstX + 1) && y == (firstY + 1))
+          {
+             i -= 1;
+             continue;
+          }
+         
 
          while (state[x, y].type == Cell.Type.Mine)
          {
@@ -116,6 +180,7 @@ public class GameLogic : MonoBehaviour
          }
 
          state[x, y].type = Cell.Type.Mine;
+         gridMineCount++;
       }
    }
 
@@ -169,14 +234,11 @@ public class GameLogic : MonoBehaviour
 
       return count;
    }
-
-   private void flagNumber()
+   
+   private int CountFlags(int cellX, int cellY)
    {
-      int flagCount = 0;
-      Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-      Vector3Int cellPosition = board.tilemap.WorldToCell(worldPosition);
-      Cell cell = GetCell(cellPosition.x, cellPosition.y);
-      
+      int count = 0;
+
       for (int adjacentX = -1; adjacentX <= 1; adjacentX++)
       {
          for (int adjacentY = -1; adjacentY <= 1; adjacentY++)
@@ -186,26 +248,27 @@ public class GameLogic : MonoBehaviour
                continue;
             }
 
-            int x = cellPosition.x + adjacentX;
-            int y = cellPosition.y + adjacentY;
+            int x = cellX + adjacentX;
+            int y = cellY + adjacentY;
 
-            if (GetCell(x, y).type != Cell.Type.Invalid && cell.flagged == true)  
+            if (GetCell(x, y).flagged || GetCell(x, y).exploded)
             {
-               flagCount++;
+               count++;
             }
          }
       }
+
+      return count;
    }
-   
    
    private void Update()
    {
-      Debug.Log(currentMineCount);
       playerHealth = gameBoss.playerHealthMain;
       playerHealthBar.healthbarHealthValue = playerHealth;
       ifLost();
       if (!gameOver)
       {
+         
          if (firstClick == false)
          {
             if (Input.GetMouseButtonDown(0))
@@ -213,10 +276,10 @@ public class GameLogic : MonoBehaviour
                Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                Vector3Int cellPosition = board.tilemap.WorldToCell(worldPosition);
                Cell cell = GetCell(cellPosition.x, cellPosition.y);
-               cell.type = Cell.Type.Empty;
+               GenerateMines();
+               GenerateNumbers();
                state[cellPosition.x, cellPosition.y] = cell;
                board.Draw(state);
-               Reveal();
                firstClick = true;
             }
 
@@ -230,15 +293,43 @@ public class GameLogic : MonoBehaviour
             else if (Input.GetMouseButtonDown(0))
             {
                Reveal();
+               RevealAdjacent();
+
             }
 
          }
-
+         
       }
+      
       checkWin();
    }
 
    private void CheckReset()
+   {
+      int flags = 0;
+      for (int x = 0; x < width; x++)
+      {
+         for (int y = 0; y < height; y++)
+         {
+            Cell cell = state[x, y];
+      
+            if (cell.flagged || cell.exploded)
+            {
+               flags++;
+            }
+
+            if (flags >= gridMineCount)
+            {
+               NewGame();
+            }
+         }
+      }
+      
+      
+      
+   }
+   
+   private void CheckClear()
    {
       for (int x = 0; x < width; x++)
       {
@@ -246,15 +337,18 @@ public class GameLogic : MonoBehaviour
          {
             Cell cell = state[x, y];
 
-            if (cell.type != Cell.Type.Mine && !cell.revealed)
+            if (cell.type == Cell.Type.Mine )
             {
-               return;
+               if (cell.flagged || cell.revealed)
+               {
+                  CheckReset();
+               }
             }
-
+            
          }
       }
-      NewGame();
-      enemyHealth.healthbarHealthValue = currentMineCount;
+      
+      // enemyHealth.healthbarHealthValue = currentMineCount;
    }
 
    private void Flag()
@@ -268,26 +362,44 @@ public class GameLogic : MonoBehaviour
          return;
       }
 
-      if (cell.type == Cell.Type.Mine)
+      if (cell.type == Cell.Type.Mine && !cell.flagged)
       {
          currentMineCount -= 1;
          
       }
-      else if (cell.flagged)
-      {
-         currentMineCount -= 1;
-      }
-      else
+      else if (cell.type == Cell.Type.Mine && cell.flagged)
       {
          currentMineCount++;
+      }
+
+      if (cell.type == Cell.Type.Number && !cell.flagged)
+      {
+         currentMineCount++;
+      }
+
+      if (cell.type == Cell.Type.Number && cell.flagged)
+      {
+         currentMineCount -= 1;
       }
 
 
       cell.flagged = !cell.flagged;
       state[cellPosition.x, cellPosition.y] = cell;
-      board.Draw(state);
+      board.Draw(state); 
+      CheckClear();
       _source.clip = _flag;
       _source.Play();
+
+      if (cell.flagged)
+      {
+         flagCount -= 1;
+      }
+
+      if (!cell.flagged)
+      {
+         flagCount++;
+      }
+      
    }
 
    private void Reveal()
@@ -304,26 +416,121 @@ public class GameLogic : MonoBehaviour
       {
          case Cell.Type.Mine:
             Explode(cell);
+            CheckClear();
             break;
 
          case Cell.Type.Empty:
             Flood(cell);
-            CheckReset();
             break;
-
+         
          default:
             cell.revealed = true;
             state[cellPosition.x, cellPosition.y] = cell;
-            CheckReset();
+            CheckClear();
             break;
       }
       
+      
       board.Draw(state);
    }
-
-   private void RevealAdjacent(Cell cell)
+   
+   private void RevealAdjacent()
    {
+      Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+      Vector3Int cellPosition = board.tilemap.WorldToCell(worldPosition);
+      Cell cell = GetCell(cellPosition.x, cellPosition.y);
+      int nearFlagCount = CountFlags(cellPosition.x, cellPosition.y);
+      int adjMineCount = CountMines(cellPosition.x, cellPosition.y);
+
+
+      if (nearFlagCount == 0)
+      {
+         return;
+      }
+
+      if (nearFlagCount < adjMineCount)
+      {
+         return;
+      }
+
+      if (nearFlagCount > adjMineCount)
+      {
+         return;
+      }
+
+      for (int xFalseFlag = -1; xFalseFlag <= 1; xFalseFlag++)
+      {
+         for (int yFalseFlag = -1; yFalseFlag <= 1; yFalseFlag++)
+         {
+            int adjX = cellPosition.x + xFalseFlag;
+            int adjY = cellPosition.y + yFalseFlag;
+            cell = GetCell(adjX, adjY);
+            
+            if (cell.type == Cell.Type.Invalid)
+            {
+                  continue;
+            }
+            
+            if (cell.flagged && cell.type != Cell.Type.Mine)
+            {
+               cell.flagged = false;
+               state[adjX, adjY] = cell;
+               board.Draw(state);
+
+               cell.revealed = true;
+               state[adjX, adjY] = cell;
+               board.Draw(state);
+               
+               flagCount++;
+            }
+
+            if (cell.exploded == false)
+            {
+               if (cell.type == Cell.Type.Mine && cell.flagged == false)
+               {
+                  cell.exploded = true;
+                  cell.revealed = true;
+                  state[adjX, adjY] = cell;
+                  board.Draw(state);
+
+                  currentMineCount -= 1;
+                  playerHealth -= 1;
+                  gameBoss.playerHealthMain -= 1;
+                  playerHealthBar.SetHealth(playerHealth);
+
+                  return;
+               }
+            }
+         }
+      }
       
+      for (int revCellX = -1; revCellX <= 1; revCellX++)
+      {
+            for (int revCellY = -1; revCellY <= 1; revCellY++)
+            {
+               int revX = revCellX + cellPosition.x;
+               int revY = revCellY + cellPosition.y;
+               cell = GetCell(revX, revY);
+               
+               if (cell.type == Cell.Type.Invalid)
+               {
+                     continue;
+               }
+               
+               if (cell.type == Cell.Type.Number)
+               {
+                  cell.revealed = true;
+                  state[revX, revY] = cell;
+                  board.Draw(state);
+               }
+
+               if (cell.type == Cell.Type.Empty)
+               {
+                  Flood(cell);
+               }
+            }
+      }
+   
    }
    
 
@@ -339,7 +546,10 @@ public class GameLogic : MonoBehaviour
       gameBoss.playerHealthMain -= 1;
       playerHealthBar.SetHealth(playerHealth);
 
-
+      flagCount -= 1;
+      
+      CheckClear();
+      
    }
 
 
@@ -367,6 +577,10 @@ public class GameLogic : MonoBehaviour
          Flood(GetCell(cell.position.x + 1,cell.position.y));
          Flood(GetCell(cell.position.x, cell.position.y - 1));
          Flood(GetCell(cell.position.x, cell.position.y + 1));
+         Flood(GetCell(cell.position.x - 1, cell.position.y - 1));
+         Flood(GetCell(cell.position.x - 1, cell.position.y + 1));
+         Flood(GetCell(cell.position.x + 1, cell.position.y - 1));
+         Flood(GetCell(cell.position.x + 1, cell.position.y + 1));
       }
    }
 

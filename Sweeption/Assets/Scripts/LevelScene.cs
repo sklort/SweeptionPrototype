@@ -11,6 +11,7 @@ public class LevelScene : MonoBehaviour
         _source = GetComponent<AudioSource>();
         _source.clip = _win;
         _source.Play();
+        
     }
     
     public void levelSelect()

@@ -21,7 +21,7 @@ public class GameBoss : MonoBehaviour
     public int playerMoney;
     public int timeUp10;
     public int timeUp30;
-    
+    public int levelsBeat = 0;
     void Awake()
     {
         //Singleton pattern

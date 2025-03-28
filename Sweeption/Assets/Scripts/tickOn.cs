@@ -8,10 +8,12 @@ public class NewMonoBehaviourScript : MonoBehaviour
     [SerializeField] private GameBoss gameBoss;
     [SerializeField] private GameObject gameBossObject;
     [SerializeField] private PlayerHealth playerHealthScript;
+    [SerializeField] private Timer timer;
 
     [SerializeField] private bool init = false;
 
     private bool inCoroutine = false;
+    private bool tickOn;
 
     private Coroutine _coroutine;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -19,6 +21,8 @@ public class NewMonoBehaviourScript : MonoBehaviour
 
     private void Update()
     {
+        tickOn = timer.tickOn;
+        
         if (init == false)
         {
             gameBossObject = GameObject.Find("GameBoss");
@@ -26,9 +30,18 @@ public class NewMonoBehaviourScript : MonoBehaviour
             init = true;
         }
         
-        if (!inCoroutine)
+        if (timer.tickOn)
         {
-            _coroutine = StartCoroutine(startTick());
+            if (inCoroutine == false)
+            {
+                StartCoroutine(startTick());
+            }
+        }
+
+        if (timer.tickOn == false)
+        {
+            StopAllCoroutines();
+            inCoroutine = false;
         }
     }
 
